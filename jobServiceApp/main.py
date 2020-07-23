@@ -42,7 +42,7 @@ thesis_added=False
 appPath='/app/jobServiceApp/'
 pathtohere='C:\\Users\\Acer\\Documents\\quart\\appsquart\\herokuAddingNewThesis\\jobServiceApp\\'
 #appPath='/Users/ulysesrico/respaldomaculy/quart/appsquart/appThesisjobservice/jobserviceapp/'
-"""
+
 #Chrome configuration for heroku
 
 chrome_options= webdriver.ChromeOptions()
@@ -52,20 +52,21 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--no-sandbox")
 
 browser=webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"),chrome_options=chrome_options)
-"""
+
 
 #End of chrome configuration
-
+"""
 #Chrome configuration for local machine
 chromedriver_autoinstaller.install()
 browser=webdriver.Chrome()
+"""
 
 
 def main():
     print('Running program...')
     #The limits in readUrl may vary up to the need of the search
-    #res=readUrl(1,2021818,3000000) 
-    getIDLimit(1,2022560,3000000,10) 
+    res=readUrl(1,2025418,3000000) 
+    #getIDLimit(1,2022560,3000000,10) 
     print("Main program is done")
   
   
@@ -134,7 +135,7 @@ def cassandraBDProcess(json_thesis):
     #Connect to Cassandra
     objCC=CassandraConnection()
     cloud_config= {
-        'secure_connect_bundle': pathtohere+'secure-connect-dbquart.zip'
+        'secure_connect_bundle': appPath+'secure-connect-dbquart.zip'
     }
     
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
@@ -144,8 +145,6 @@ def cassandraBDProcess(json_thesis):
     #Get values for query
     #Ejemplo : Décima Época
     thesis_added=False
-    period=json_thesis['period']
-    period=period.lower()
     
     cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
     session = cluster.connect()
