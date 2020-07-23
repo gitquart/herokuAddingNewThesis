@@ -88,7 +88,7 @@ def readUrl(sense,l_bot,l_top):
     
     
     #Import JSON file
-    with open(pathtohere+'thesis_json_base.json') as f:
+    with open(appPath+'thesis_json_base.json') as f:
         json_thesis = json.load(f)
           
     #Onwars for    
