@@ -42,7 +42,7 @@ thesis_added=False
 appPath='/app/jobServiceApp/'
 pathtohere='C:\\Users\\Acer\\Documents\\quart\\appsquart\\herokuAddingNewThesis\\jobServiceApp\\'
 #appPath='/Users/ulysesrico/respaldomaculy/quart/appsquart/appThesisjobservice/jobserviceapp/'
-
+"""
 #Chrome configuration for heroku
 
 chrome_options= webdriver.ChromeOptions()
@@ -59,7 +59,7 @@ browser=webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"),chr
 #Chrome configuration for local machine
 chromedriver_autoinstaller.install()
 browser=webdriver.Chrome()
-"""
+
 
 
 def main():
@@ -88,7 +88,7 @@ def readUrl(sense,l_bot,l_top):
     
     
     #Import JSON file
-    with open(appPath+'thesis_json_base.json') as f:
+    with open(pathtohere+'thesis_json_base.json') as f:
         json_thesis = json.load(f)
           
     #Onwars for    
@@ -135,7 +135,7 @@ def cassandraBDProcess(json_thesis):
     #Connect to Cassandra
     objCC=CassandraConnection()
     cloud_config= {
-        'secure_connect_bundle': appPath+'secure-connect-dbquart.zip'
+        'secure_connect_bundle': pathtohere+'secure-connect-dbquart.zip'
     }
     
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
