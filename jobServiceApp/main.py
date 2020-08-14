@@ -39,8 +39,7 @@ thesis_class=['publicacion']
 precedentes_list=['francesa','nota']
 ls_months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
 thesis_added=False
-appPath='/app/jobServiceApp/'
-pathtohere='C:\\Users\\Acer\\Documents\\quart\\appsquart\\herokuAddingNewThesis\\jobServiceApp\\'
+pathtohere=os.getcwd()
 #appPath='/Users/ulysesrico/respaldomaculy/quart/appsquart/appThesisjobservice/jobserviceapp/'
 """
 #Chrome configuration for heroku
@@ -65,7 +64,7 @@ browser=webdriver.Chrome()
 def main():
     print('Running program...')
     #The limits in readUrl may vary up to the need of the search
-    res=readUrl(1,2025418,3000000) 
+    res=readUrl(1,2021818,3000000) 
     #getIDLimit(1,2022560,3000000,10) 
     print("Main program is done")
   
@@ -88,7 +87,7 @@ def readUrl(sense,l_bot,l_top):
     
     
     #Import JSON file
-    with open(pathtohere+'thesis_json_base.json') as f:
+    with open(pathtohere+'\\jobServiceApp\\thesis_json_base.json') as f:
         json_thesis = json.load(f)
           
     #Onwars for    
@@ -135,7 +134,7 @@ def cassandraBDProcess(json_thesis):
     #Connect to Cassandra
     objCC=CassandraConnection()
     cloud_config= {
-        'secure_connect_bundle': pathtohere+'secure-connect-dbquart.zip'
+        'secure_connect_bundle': pathtohere+'\\jobServiceApp\\secure-connect-dbquart.zip'
     }
     
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
@@ -264,7 +263,7 @@ def prepareThesis(id_thesis,json_thesis):
                             json_thesis['subject']=chunks[1]
                             subjectChunks=chunks[1].strip()
                             if subjectChunks.find(',')!=-1:
-                                subjectChunks=subject.split(',')
+                                subjectChunks=subjectChunks.split(',')
                                 if len(subjectChunks)>1: 
                                     if len(subjectChunks)==3:
                                         json_thesis['subject_3']=subjectChunks[2]
@@ -280,7 +279,7 @@ def prepareThesis(id_thesis,json_thesis):
                             json_thesis['subject']=chunks[2]
                             subjectChunks=chunks[2].strip()
                             if subjectChunks.find(',')!=-1:
-                                subjectChunks=subject.split(',')
+                                subjectChunks=subjectChunks.split(',')
                                 if len(subjectChunks)>1: 
                                     if len(subjectChunks)==3:
                                         json_thesis['subject_3']=subjectChunks[2]
