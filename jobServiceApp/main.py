@@ -64,7 +64,7 @@ browser=webdriver.Chrome()
 def main():
     print('Running program...')
     #The limits in readUrl may vary up to the need of the search
-    res=readUrl(1,2021818,3000000) 
+    res=readUrl(1,2022004,2022022) 
     #getIDLimit(1,2022560,3000000,10) 
     print("Main program is done")
   
@@ -190,7 +190,7 @@ def prepareThesis(id_thesis,json_thesis):
     if status==200:
         browser.get(url)
         #30 seconds of waiting
-        time.sleep(30)
+        time.sleep(10)
         thesis_html = BeautifulSoup(browser.page_source, 'lxml')
         title=thesis_html.find('title')
         title_text=title.text
