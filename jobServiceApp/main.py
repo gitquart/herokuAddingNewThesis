@@ -64,7 +64,7 @@ browser=webdriver.Chrome()
 def main():
     print('Running program...')
     #The limits in readUrl may vary up to the need of the search
-    res=readUrl(1,2022004,2022022) 
+    res=readUrl(1,2022020,3000000) 
     #getIDLimit(1,2022560,3000000,10) 
     print("Main program is done")
   
