@@ -133,14 +133,13 @@ def cassandraBDProcess(json_thesis):
     #Connect to Cassandra
     objCC=CassandraConnection()
     cloud_config= {
-    
-    
-        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip',
-         auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
+
+        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
+         
     }
     
    
-        
+    auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
     #Get values for query
     #Ejemplo : Décima Época
     thesis_added=False
