@@ -87,9 +87,9 @@ def readUrl(sense,l_bot,l_top):
     
     
     #Import JSON file
-    with open(pathtohere+'\\jobServiceApp\\thesis_json_base.json') as f:
         json_thesis = json.load(f)
           
+    with open(pathtohere+'/jobServiceApp/thesis_json_base.json') as f:
     #Onwars for    
     if sense==1:
         for x in range(l_bot,l_top):
@@ -134,9 +134,9 @@ def cassandraBDProcess(json_thesis):
     #Connect to Cassandra
     objCC=CassandraConnection()
     cloud_config= {
-        'secure_connect_bundle': pathtohere+'\\jobServiceApp\\secure-connect-dbquart.zip'
     }
     
+        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
     
    
