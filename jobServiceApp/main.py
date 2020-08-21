@@ -86,10 +86,9 @@ def readUrl(sense,l_bot,l_top):
     print('Starting process...')
     
     
-    #Import JSON file
-        json_thesis = json.load(f)
-          
+    #Import JSON file     
     with open(pathtohere+'/jobServiceApp/thesis_json_base.json') as f:
+        json_thesis = json.load(f)
     #Onwars for    
     if sense==1:
         for x in range(l_bot,l_top):
