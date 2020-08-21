@@ -40,8 +40,7 @@ precedentes_list=['francesa','nota']
 ls_months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
 thesis_added=False
 pathtohere=os.getcwd()
-#appPath='/Users/ulysesrico/respaldomaculy/quart/appsquart/appThesisjobservice/jobserviceapp/'
-"""
+
 #Chrome configuration for heroku
 
 chrome_options= webdriver.ChromeOptions()
@@ -58,6 +57,7 @@ browser=webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"),chr
 #Chrome configuration for local machine
 chromedriver_autoinstaller.install()
 browser=webdriver.Chrome()
+"""
 
 
 
@@ -190,7 +190,7 @@ def prepareThesis(id_thesis,json_thesis):
     if status==200:
         browser.get(url)
         #30 seconds of waiting
-        time.sleep(10)
+        time.sleep(30)
         thesis_html = BeautifulSoup(browser.page_source, 'lxml')
         title=thesis_html.find('title')
         title_text=title.text
