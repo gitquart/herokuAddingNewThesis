@@ -64,8 +64,7 @@ browser=webdriver.Chrome()
 def main():
     print('Running program...')
     #The limits in readUrl may vary up to the need of the search
-    res=readUrl(1,2022020,3000000) 
-    #getIDLimit(1,2022560,3000000,10) 
+    res=readUrl(1,2022044,3000000)  
     print("Main program is done")
   
   
@@ -94,6 +93,9 @@ def readUrl(sense,l_bot,l_top):
         for x in range(l_bot,l_top):
             print('Current thesis:',str(x))
             res=prepareThesis(x,json_thesis)
+            # "m" means it is a missing space, no thesis found, then stop the program
+            if res=='m':
+                break
             #wf.appendInfoToFile(pathToHere+'tests/',str(x)+'.json',json.dumps(json_thesis))
             if res!='':
                 thesis_added=cassandraBDProcess(res) 
@@ -317,7 +319,7 @@ def prepareThesis(id_thesis,json_thesis):
         #Error, so I must set this condition to know if that ID doesn't have a thesis
         if title_text.strip()== msg_error:
             print('Missing thesis at ID:',strIdThesis)
-            result=''
+            result='m'
                   
     else:
         print('Server failure:',strIdThesis)
