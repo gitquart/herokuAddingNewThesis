@@ -63,8 +63,10 @@ browser=webdriver.Chrome()
 
 def main():
     print('Running program...')
+    lsInfo=getPageAndTopic()
+    startID=int(lsInfo[1])
     #The limits in readUrl may vary up to the need of the search
-    res=readUrl(1,2022340,2500000)  
+    res=readUrl(1,startID,2500000)  
     print("Main program is done")
   
   
@@ -114,18 +116,63 @@ def readUrl(sense,l_bot,l_top):
             if res!='':
                 #Upload thsis to Cassandra 
                 thesis_added=cassandraBDProcess(res) 
-                #thesis_added=True 
                 if thesis_added==True:
                     noTesis=noTesis+1
                     print('Thesis ready: ',noTesis, "-ID: ",x)
-                    #if noTesis==3:
-                    #    break 
                                    
     browser.quit()  
     
     return 'It is all done'
 
+
+def updatePage(page):
+
+    #Connect to Cassandra
+    objCC=CassandraConnection()
+    cloud_config= {
+        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
+    }
+    
+    auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
+    cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
+    session = cluster.connect()
+    session.default_timeout=70
+    row=''
+    page=str(page)
+    querySt="update thesis.cjf_control set page="+page+" where  id_control=4;"          
+    future = session.execute_async(querySt)
+    row=future.result()
+                         
+    return True
    
+def getPageAndTopic():
+
+    #Connect to Cassandra
+    objCC=CassandraConnection()
+    cloud_config= {
+        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
+    }
+    
+    auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
+    cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
+    session = cluster.connect()
+    session.default_timeout=70
+    row=''
+    querySt="select query,page from thesis.cjf_control where id_control=4  ALLOW FILTERING"
+                
+    future = session.execute_async(querySt)
+    row=future.result()
+    lsInfo=[]
+        
+    if row: 
+        for val in row:
+            lsInfo.append(str(val[0]))
+            lsInfo.append(str(val[1]))
+            print('Value from cassandra:',str(val[0]))
+            print('Value from cassandra:',str(val[1]))
+        cluster.shutdown()
+                                           
+    return lsInfo    
           
 def cassandraBDProcess(json_thesis):
     
@@ -319,6 +366,7 @@ def prepareThesis(id_thesis,json_thesis):
         #Error, so I must set this condition to know if that ID doesn't have a thesis
         if title_text.strip()== msg_error:
             print('Missing thesis at ID:',strIdThesis)
+            updatePage(strIdThesis)
             result='m'
                   
     else:
