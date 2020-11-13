@@ -137,11 +137,10 @@ def updatePage(page):
     cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
     session = cluster.connect()
     session.default_timeout=70
-    row=''
     page=str(page)
     querySt="update thesis.cjf_control set page="+page+" where  id_control=4;"          
     future = session.execute_async(querySt)
-    row=future.result()
+    future.result()
                          
     return True
    
