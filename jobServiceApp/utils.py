@@ -1,4 +1,4 @@
-import cassandra as db
+import cassandraUtil as db
 import json
 import os
 from selenium import webdriver

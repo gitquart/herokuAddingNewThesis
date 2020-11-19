@@ -21,7 +21,7 @@ Info:
 
 import json
 import os
-import cassandra as db
+import cassandraUtil as db
 import utils as tool
 #import writeFile as wf
 

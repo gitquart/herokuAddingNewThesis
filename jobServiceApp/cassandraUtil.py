@@ -1,6 +1,7 @@
 import json
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
+import os
 pathtohere=os.getcwd()
 
 def updatePage(page):
