@@ -2,15 +2,16 @@ import json
 from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
 import os
-pathtohere=os.getcwd()
+
+cloud_config= {
+        'secure_connect_bundle': '/app/jobServiceApp/secure-connect-dbquart.zip'
+    }
 
 def updatePage(page):
 
     #Connect to Cassandra
     objCC=CassandraConnection()
-    cloud_config= {
-        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
-    }
+    
     
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
     cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
@@ -27,10 +28,6 @@ def getPageAndTopic():
 
     #Connect to Cassandra
     objCC=CassandraConnection()
-    cloud_config= {
-        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
-    }
-    
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
     cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
     session = cluster.connect()
@@ -59,13 +56,6 @@ def cassandraBDProcess(json_thesis):
 
     #Connect to Cassandra
     objCC=CassandraConnection()
-    cloud_config= {
-
-        'secure_connect_bundle': pathtohere+'/jobServiceApp/secure-connect-dbquart.zip'
-         
-    }
-    
-   
     auth_provider = PlainTextAuthProvider(objCC.cc_user,objCC.cc_pwd)
     #Get values for query
     #Ejemplo : Décima Época

@@ -24,15 +24,12 @@ import os
 import cassandraUtil as db
 import utils as tool
 
-#Global variables
-
-
-pathtohere=os.getcwd()
 print('Running program...')
 lsInfo=db.getPageAndTopic()
 startID=int(lsInfo[1])
 #The limits in readUrl may vary up to the need of the search
-tool.readUrl(1,startID,2500000)  
+tool.readUrl(1,startID,5000000)  
 print("Main program is done")
+os.sys.exit(0)
   
 

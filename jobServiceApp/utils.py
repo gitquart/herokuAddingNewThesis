@@ -7,7 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 import time
 
-pathtohere=os.getcwd()
 date_null='1000-01-01'
 msg_error="Custom Error"
 thesis_id=[ 'lblTesisBD','lblInstancia','lblFuente','lblLocMesAño','lblEpoca','lblLocPagina','lblTJ','lblRubro','lblTexto','lblPrecedentes']
@@ -25,7 +24,6 @@ chrome_options.add_argument("--no-sandbox")
 
 browser=webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"),chrome_options=chrome_options)
 
-
 #End of chrome configuration
 
 """
@@ -39,40 +37,20 @@ def readUrl(sense,l_bot,l_top):
     res=''
     #Can use noTesis as test variable too
     noTesis=0
-    strField=''
     print('Starting process...')
-    
-    
     #Import JSON file     
-    with open(pathtohere+'/jobServiceApp/thesis_json_base.json') as f:
-        json_thesis = json.load(f)
-    #Onwars for    
-    if sense==1:
-        for x in range(l_bot,l_top):
-            print('Current thesis:',str(x))
-            res=prepareThesis(x,json_thesis)
-            # "m" means it is a missing space, no thesis found, then stop the program
-            if res=='m':
-                break
-            if res!='':
-                thesis_added=db.cassandraBDProcess(res) 
-                #thesis_added=True 
-                if thesis_added==True:
-                    noTesis=noTesis+1
-                    print('Thesis ready: ',noTesis, "-ID: ",x)
-                   
-    #Backwards For             
-    else:
-        for x in range(l_top,l_bot,-1): 
-            print('Current thesis:',str(x))
-            res=prepareThesis(x,json_thesis)
-            if res!='':
-                #Upload thsis to Cassandra 
-                thesis_added=db.cassandraBDProcess(res) 
-                if thesis_added==True:
-                    noTesis=noTesis+1
-                    print('Thesis ready: ',noTesis, "-ID: ",x)
-                                   
+    json_thesis=devuelveJSON('/app/jobServiceApp/thesis_json_base.json')    
+    for x in range(l_bot,l_top):
+        print('Current thesis:',str(x))
+        res=prepareThesis(x,json_thesis)
+        # "m" means it is a missing space, no thesis found, then stop the program
+        if res=='m':
+            break
+        if res!='':
+            thesis_added=db.cassandraBDProcess(res)  
+            if thesis_added==True:
+                noTesis=noTesis+1
+                print('Thesis ready: ',noTesis, "-ID: ",x)                   
     browser.quit()  
     
     return 'It is all done'
@@ -308,7 +286,11 @@ def searchInUrl(x,strperiod):
                     return 1
                
                     
-
+def devuelveJSON(jsonFile):
+    with open(jsonFile) as json_file:
+        jsonObj = json.load(json_file)
+    
+    return jsonObj 
     
 
     
