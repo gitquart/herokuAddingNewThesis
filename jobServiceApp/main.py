@@ -23,24 +23,16 @@ import json
 import os
 import cassandraUtil as db
 import utils as tool
-#import writeFile as wf
 
 #Global variables
 
 
 pathtohere=os.getcwd()
-
-
-
-def main():
-    print('Running program...')
-    lsInfo=db.getPageAndTopic()
-    startID=int(lsInfo[1])
-    #The limits in readUrl may vary up to the need of the search
-    tool.readUrl(1,startID,2500000)  
-    print("Main program is done")
+print('Running program...')
+lsInfo=db.getPageAndTopic()
+startID=int(lsInfo[1])
+#The limits in readUrl may vary up to the need of the search
+tool.readUrl(1,startID,2500000)  
+print("Main program is done")
   
 
-        
-if __name__=='__main__':
-    main()        
