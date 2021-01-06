@@ -6,25 +6,51 @@ import chromedriver_autoinstaller
 import requests 
 from bs4 import BeautifulSoup
 import time
+from InternalControl import cInternalControl
+from selenium.webdriver.chrome.options import Options
+
+objControl=cInternalControl()
 
 date_null='1000-01-01'
-msg_error="Custom Error"
+msg_error="Error Page!"
 thesis_id=[ 'lblTesisBD','lblInstancia','lblFuente','lblLocMesAño','lblEpoca','lblLocPagina','lblTJ','lblRubro','lblTexto','lblPrecedentes']
 thesis_class=['publicacion']
 precedentes_list=['francesa','nota']
 ls_months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
 thesis_added=False
-#Chrome configuration for heroku
 
-chrome_options= webdriver.ChromeOptions()
-chrome_options.binary_location=os.environ.get("GOOGLE_CHROME_BIN")
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--no-sandbox")
 
-browser=webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"),chrome_options=chrome_options)
 
-#End of chrome configuration
+def returnChromeSettings():
+    browser=''
+    chromedriver_autoinstaller.install()
+    if objControl.heroku:
+        #Chrome configuration for heroku
+        chrome_options= webdriver.ChromeOptions()
+        chrome_options.binary_location=os.environ.get("GOOGLE_CHROME_BIN")
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--no-sandbox")
+
+        browser=webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"),chrome_options=chrome_options)
+
+    else:
+        options = Options()
+        profile = {"plugins.plugins_list": [{"enabled": True, "name": "Chrome PDF Viewer"}], # Disable Chrome's PDF Viewer
+               "download.default_directory": objControl.download_dir , 
+               "download.prompt_for_download": False,
+               "download.directory_upgrade": True,
+               "download.extensions_to_open": "applications/pdf",
+               "plugins.always_open_pdf_externally": True #It will not show PDF directly in chrome
+               }           
+
+        options.add_experimental_option("prefs", profile)
+        browser=webdriver.Chrome(options=options)  
+
+    
+
+    return browser 
+
 
 """
 readUrl
@@ -36,21 +62,37 @@ def readUrl(sense,l_bot,l_top):
     
     res=''
     #Can use noTesis as test variable too
+    browser=returnChromeSettings()
     noTesis=0
     print('Starting process...')
-    #Import JSON file     
-    json_thesis=devuelveJSON('/app/jobServiceApp/thesis_json_base.json')    
+    #Import JSON file  
+    if objControl.heroku:   
+        json_thesis=devuelveJSON(objControl.rutaHeroku+'thesis_json_base.json')  
+    else:
+        json_thesis=devuelveJSON(objControl.rutaLocal+'thesis_json_base.json')
+
     for x in range(l_bot,l_top):
         print('Current thesis:',str(x))
-        res=prepareThesis(x,json_thesis)
+        res=prepareThesis(x,json_thesis,browser)
         # "m" means it is a missing space, no thesis found, then stop the program
         if res=='m':
-            break
+            print("Main program is done")
+            os.sys.exit(0)
         if res!='':
-            thesis_added=db.cassandraBDProcess(res)  
-            if thesis_added==True:
-                noTesis=noTesis+1
-                print('Thesis ready: ',noTesis, "-ID: ",x)                   
+            #Check if the record exist
+            idThesis=res['id_thesis']
+            heading=res['heading']
+            querySt="select id_thesis from thesis.tbthesis where id_thesis="+str(idThesis)+" and heading='"+heading+"'"
+            resultSet=db.getQuery(querySt)
+            if resultSet:
+                pass
+            else:
+                #Insert JSON
+                res=db.insertJSON(res)  
+                if res:
+                    print('Thesis ready ID: ',x) 
+                    querySt="update thesis.cjf_control set page="+str(x)+" where  id_control=4;"
+                    db.executeNonQuery(querySt)                  
     browser.quit()  
     
     return 'It is all done'
@@ -61,11 +103,11 @@ prepareThesis:
     Reads the url where the service is fetching data from thesis
 """
 
-def prepareThesis(id_thesis,json_thesis): 
+def prepareThesis(id_thesis,json_thesis,browser): 
     
     result=''
     strIdThesis=str(id_thesis) 
-    url="https://sjf.scjn.gob.mx/SJFSist/Paginas/DetalleGeneralV2.aspx?ID="+strIdThesis+"&Clase=DetalleTesisBL&Semanario=0"
+    url="https://sjf2.scjn.gob.mx/detalle/tesis/"+strIdThesis
     response= requests.get(url)
     status= response.status_code
     if status==200:
@@ -75,131 +117,13 @@ def prepareThesis(id_thesis,json_thesis):
         thesis_html = BeautifulSoup(browser.page_source, 'lxml')
         title=thesis_html.find('title')
         title_text=title.text
-        if title_text.strip()!= msg_error:  
-            #Clear Json  
-            json_thesis['id_thesis']=''
-            json_thesis['lst_precedents'].clear()
-            json_thesis['thesis_number']=''
-            json_thesis['instance']=''
-            json_thesis['source']=''
-            json_thesis['book_number']=''  
-            json_thesis['publication_date']='' 
-            json_thesis['dt_publication_date']=''
-            json_thesis['period']=''
-            json_thesis['page']=''
-            json_thesis['jurisprudence_type']=''
-            json_thesis['type_of_thesis']=''
-            json_thesis['subject']=''
-            json_thesis['subject_1']=''
-            json_thesis['subject_2']=''
-            json_thesis['subject_3']=''
-            json_thesis['heading']=''
-            json_thesis['text_content']=''
-            json_thesis['publication']=''
-            json_thesis['multiple_subjects']=''
-            
-            
-            json_thesis['id_thesis']=int(strIdThesis)
-            #Fet values from header, and body of thesis
-            for obj in thesis_id:  
-                field=thesis_html.find(id=obj)
-                if field.text != '':   
-                    strField=field.text.strip()
-                    if obj==thesis_id[0]:
-                        json_thesis['thesis_number']=strField
-                    if obj==thesis_id[1]:
-                        json_thesis['instance']=strField
-                    if obj==thesis_id[2]:
-                        json_thesis['source']=strField
-                    #Special Case    
-                    if obj==thesis_id[3]: 
-                        json_thesis['book_number']=strField  
-                        json_thesis['publication_date']=strField
-                        json_thesis['dt_publication_date']=getCompleteDate(strField) 
-                                                
-                    if obj==thesis_id[4]:
-                        json_thesis['period']=strField
-                        if strField=='Quinta Época':
-                            json_thesis['period_number']=5
-                        if strField=='Sexta Época':
-                            json_thesis['period_number']=6
-                        if strField=='Séptima Época':
-                            json_thesis['period_number']=7
-                        if strField=='Octava Época':
-                            json_thesis['period_number']=8        
-                        if strField=='Novena Época':
-                            json_thesis['period_number']=9
-                        if strField=='Décima Época':
-                            json_thesis['period_number']=10       
-                    if obj==thesis_id[5]:
-                        json_thesis['page']=strField
-                    #Special case :
-                    #Type of jurispricende: pattern => (Type of thesis () )
-                    if obj==thesis_id[6]:
-                        strField=strField.replace(')','')
-                        chunks=strField.split('(')
-                        count=len(chunks)
-                        if count==2: 
-                            json_thesis['type_of_thesis']=chunks[0]
-                            json_thesis['subject']=chunks[1]
-                            subjectChunks=chunks[1].strip()
-                            if subjectChunks.find(',')!=-1:
-                                subjectChunks=subjectChunks.split(',')
-                                if len(subjectChunks)>1: 
-                                    if len(subjectChunks)==3:
-                                        json_thesis['subject_3']=subjectChunks[2]
-                                    json_thesis['subject_1']=subjectChunks[0]
-                                    json_thesis['subject_2']=subjectChunks[1]
-                                    json_thesis['multiple_subjects']=True
-                                else:
-                                    json_thesis['multiple_subjects']=False
-                                            
-                        if count==3:
-                            json_thesis['jurisprudence_type']=chunks[0]
-                            json_thesis['type_of_thesis']=chunks[1]
-                            json_thesis['subject']=chunks[2]
-                            subjectChunks=chunks[2].strip()
-                            if subjectChunks.find(',')!=-1:
-                                subjectChunks=subjectChunks.split(',')
-                                if len(subjectChunks)>1: 
-                                    if len(subjectChunks)==3:
-                                        json_thesis['subject_3']=subjectChunks[2]
-                                    json_thesis['subject_1']=subjectChunks[0]
-                                    json_thesis['subject_2']=subjectChunks[1]
-                                    json_thesis['multiple_subjects']=True  
-                                else:
-                                    json_thesis['multiple_subjects']=False    
-
-                    if obj==thesis_id[7]:
-                        json_thesis['heading']=strField.replace("'",',')
-                    if obj==thesis_id[8]:
-                        json_thesis['text_content']=strField.replace("'",',') 
-                    if obj==thesis_id[9]:  
-                        children=thesis_html.find_all(id=obj)
-                        for child in children:
-                            for p in precedentes_list:   
-                                preced=child.find_all(class_=p)
-                                for ele in preced:
-                                    if ele.text!='':
-                                        strValue=ele.text.strip()
-                                        json_thesis['lst_precedents'].append(strValue.replace("'",','))
-
-                
-            for obj in thesis_class:
-                field=thesis_html.find(class_=obj)
-                if field.text != '':   
-                    strField=field.text.strip()
-                    if obj==thesis_class[0]:
-                        json_thesis['publication']=strField
-   
-        thesis_html=''
-        result=json_thesis
-        
-        #For some reason I can not write the else statemente for the if title different for Custom
-        #Error, so I must set this condition to know if that ID doesn't have a thesis
-        if title_text.strip()== msg_error:
+        if title_text.strip()!= msg_error:   
+            json_full=fillJson(json_thesis,browser,strIdThesis)
+            result=json_full
+        else:
             print('Missing thesis at ID:',strIdThesis)
-            db.updatePage(strIdThesis)
+            querySt="update thesis.cjf_control set page="+strIdThesis+" where  id_control=4;"
+            db.executeNonQuery(querySt)
             print('-------------------------------------------')
             print('Hey, you can turn me off now!')
             print('-------------------------------------------')
@@ -211,25 +135,117 @@ def prepareThesis(id_thesis,json_thesis):
         
     return  result
 
+def clearJSON(json_thesis):
+    json_thesis['id_thesis']=''
+    json_thesis['lst_precedents'].clear()
+    json_thesis['thesis_number']=''
+    json_thesis['instance']=''
+    json_thesis['source']=''
+    json_thesis['book_number']=''  
+    json_thesis['publication_date']='' 
+    json_thesis['dt_publication_date']=''
+    json_thesis['period']=''
+    json_thesis['page']=''
+    json_thesis['jurisprudence_type']=''
+    json_thesis['type_of_thesis']=''
+    json_thesis['subject']=''
+    json_thesis['subject_1']=''
+    json_thesis['subject_2']=''
+    json_thesis['subject_3']=''
+    json_thesis['heading']=''
+    json_thesis['text_content']=''
+    json_thesis['publication']=''
+    json_thesis['multiple_subjects']=''
 
+
+def fillJson(json_thesis,browser,strIdThesis):
+    clearJSON(json_thesis)   
+    json_thesis['id_thesis']=int(strIdThesis)
+    #Get values from header, and body of thesis
+    val=''
+    val=devuelveElemento('//*[@id="divStickyTbody"]/div[3]/div[1]/p',browser).text
+    val=val.replace('Tesis:','').strip()
+    json_thesis['thesis_number']=val
+    val=''
+    val=devuelveElemento('//*[@id="divStickyTbody"]/div[2]/div[1]/p',browser).text
+    val=val.replace('Instancia:','').strip()
+    json_thesis['instance']=val
+    val=''
+    val=devuelveElemento('//*[@id="divStickyTbody"]/div[3]/div[2]/p',browser).text
+    val=val.replace('Fuente:','').strip()
+    json_thesis['source']=val
+    chunks=val.split('.')
+    json_thesis['book_number']=chunks[1].replace('\n','')
+    #Dates fields
+    val=''
+    val=devuelveElemento('//*[@id="divDetalle"]/div/div/div/div/div[3]/jhi-tesis-detalle/div[4]/div[4]',browser).text
+    json_thesis['publication']=val  
+    chunks=val.split(' ')
+    dateStr=chunks[6]+'-'+chunks[8]+'-'+chunks[10]
+    json_thesis['dt_publication_date']=getCompleteDate(dateStr) 
+    json_thesis['publication_date']=json_thesis['dt_publication_date']
+    val=''
+    val=devuelveElemento('//*[@id="divStickyTbody"]/div[2]/div[2]/p',browser).text
+    json_thesis['period']=val.strip()
+    if val.strip()=='Quinta Época':
+        json_thesis['period_number']=5
+    if val.strip()=='Sexta Época':
+        json_thesis['period_number']=6
+    if val.strip()=='Séptima Época':
+        json_thesis['period_number']=7
+    if val.strip()=='Octava Época':
+        json_thesis['period_number']=8        
+    if val.strip()=='Novena Época':
+        json_thesis['period_number']=9
+    if val.strip()=='Décima Época':
+        json_thesis['period_number']=10
+
+    val=''
+    val=devuelveElemento('//*[@id="divStickyTbody"]/div[3]/div[3]/p',browser).text
+    val=val.replace('Tipo:','').strip()
+    json_thesis['type_of_thesis']=val  
+    val=''
+    val=devuelveElemento('//*[@id="divStickyTbody"]/div[2]/div[3]/p',browser).text
+    val=val.replace('Materia(s):','').strip() 
+    if ',' in val:
+        chunks=val.split(',')
+        count=len(chunks)
+        json_thesis['subject']=chunks[0]
+        json_thesis['subject_1']=chunks[1]   
+        if count==3:
+            json_thesis['subject_2']=chunks[1]
+        json_thesis['multiple_subjects']=True    
+
+    else:
+        json_thesis['subject']=val
+        json_thesis['multiple_subjects']=False
+
+    val=''
+    #Heading
+    val=devuelveElemento('//*[@id="divRubro"]/p',browser).text
+    val=val.replace("'",'').strip()  
+    json_thesis['heading']=val 
+    #Main text
+    val=devuelveElemento('//*[@id="divTexto"]',browser).text
+    val=val.replace("'",'').strip() 
+    json_thesis['text_content']=val 
+    #Precedent
+    val=devuelveElemento('//*[@id="divPrecedente"]',browser).text
+    val=val.replace("'",'').strip() 
+    json_thesis['lst_precedents'].append(val)
+
+
+
+    return json_thesis    
+                                 
 
 def getCompleteDate(pub_date):
     pub_date=pub_date.strip()
     if pub_date!='':
-        if pub_date.find(':')!=-1:
-            chunks=pub_date.split(':')
-            date_chunk=str(chunks[1].strip())
-            data=date_chunk.split(' ')
-            month=str(data[3].strip())
-            day=str(data[1].strip())
-            year=str(data[5].strip())
-        elif pub_date.find(' ')!=-1:
-            # Day month year and hour
-            chunks=pub_date.split(' ')
-            #day=str(chunks[1].strip())
-            month=str(chunks[0].strip())
-            year=str(chunks[2].strip()) 
-            day=''    
+        chunks=pub_date.split('-')
+        month=str(chunks[1].strip())
+        day=str(chunks[0].strip())
+        year=str(chunks[2].strip())
         month_lower=month.lower()
         for item in ls_months:
             if month_lower==item:
@@ -291,6 +307,24 @@ def devuelveJSON(jsonFile):
         jsonObj = json.load(json_file)
     
     return jsonObj 
+
+def devuelveElemento(xPath, browser):
+    cEle=0
+    while (cEle==0):
+        cEle=len(browser.find_elements_by_xpath(xPath))
+        if cEle>0:
+            ele=browser.find_elements_by_xpath(xPath)[0]
+
+    return ele  
+
+def devuelveListaElementos(xPath, browser):
+    cEle=0
+    while (cEle==0):
+        cEle=len(browser.find_elements_by_xpath(xPath))
+        if cEle>0:
+            ele=browser.find_elements_by_xpath(xPath)
+
+    return ele     
     
 
     
