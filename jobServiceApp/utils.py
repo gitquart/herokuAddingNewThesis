@@ -117,7 +117,7 @@ def prepareThesis(id_thesis,json_thesis,browser):
         thesis_html = BeautifulSoup(browser.page_source, 'lxml')
         title=thesis_html.find('title')
         title_text=title.text
-        if title_text.strip()!= msg_error:   
+        if strIdThesis in title_text.strip():   
             json_full=fillJson(json_thesis,browser,strIdThesis)
             result=json_full
         else:
